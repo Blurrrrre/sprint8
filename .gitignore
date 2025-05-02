@@ -1,0 +1,5 @@
+*.db
+*.sqlite
+/go.mod
+/go.sum
+*.exe

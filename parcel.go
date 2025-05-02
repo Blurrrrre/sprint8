@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 )
 
 type ParcelStore struct {
@@ -81,6 +80,10 @@ func (s ParcelStore) GetByClient(client int) ([]Parcel, error) {
 		res = append(res, p)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return res, nil
 }
 
@@ -98,21 +101,11 @@ func (s ParcelStore) SetStatus(number int, status string) error {
 }
 
 func (s ParcelStore) SetAddress(number int, address string) error {
-	//  updating the address in the parcel table. change the address only if the status value is registered
-
-	p, err := s.Get(number)
-	if err != nil {
-		return err
-	}
-
-	if p.Status != ParcelStatusRegistered {
-		return fmt.Errorf("адрес можно изменить только у посылки со статусом 'registered'")
-	}
-
-	_, err = s.db.Exec(
+	// update the address only if the status is "registered"
+	_, err := s.db.Exec(
 		`UPDATE parcel 
 		 SET address = :address 
-		 WHERE number = :number`,
+		 WHERE number = :number AND status = 'registered'`,
 		sql.Named("address", address),
 		sql.Named("number", number),
 	)
@@ -120,20 +113,10 @@ func (s ParcelStore) SetAddress(number int, address string) error {
 }
 
 func (s ParcelStore) Delete(number int) error {
-	//  deleting a row from the parcel table. change the address only if the status value is registered
-
-	p, err := s.Get(number)
-	if err != nil {
-		return err
-	}
-
-	if p.Status != ParcelStatusRegistered {
-		return fmt.Errorf("посылку можно удалить только со статусом 'registered'")
-	}
-
-	_, err = s.db.Exec(
+	// delete only if status is 'registered'
+	_, err := s.db.Exec(
 		`DELETE FROM parcel 
-		 WHERE number = :number`,
+		 WHERE number = :number AND status = 'registered'`,
 		sql.Named("number", number),
 	)
 	return err
